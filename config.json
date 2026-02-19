@@ -1,0 +1,15 @@
+{
+    "watch_folder": "E:\\temp\\jepanes\\dropbox\\test_photos",
+    "log_file": "photo_processor.log",
+    "log_level": "INFO",
+    "supported_formats": [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".bmp",
+        ".JPG",
+        ".JPEG",
+        ".PNG"
+    ]
+}

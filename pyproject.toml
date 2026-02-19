@@ -1,0 +1,12 @@
+[project]
+name = "dropbox"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "opencv-python>=4.13.0.92",
+    "pillow>=12.1.1",
+    "pyzbar>=0.1.9",
+    "watchdog>=6.0.0",
+]

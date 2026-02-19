@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient QR Code Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+            outline: none;
+        }
+        
+        input[type="text"]:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #qr-result {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+            display: none;
+        }
+        
+        #qr-result.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        #qrcode canvas,
+        #qrcode img {
+            border-radius: 10px;
+        }
+        
+        .patient-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        .patient-info strong {
+            color: #667eea;
+            font-size: 18px;
+        }
+        
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: left;
+            font-size: 13px;
+            color: #856404;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #856404;
+            font-size: 14px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+        
+        .download-btn {
+            margin-top: 15px;
+            background: #28a745;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .download-btn:hover {
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+        
+        .new-qr-btn {
+            margin-top: 10px;
+            background: #6c757d;
+        }
+        
+        .new-qr-btn:hover {
+            box-shadow: 0 10px 20px rgba(108, 117, 125, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 Patient QR Generator</h1>
+        <p class="subtitle">Generate QR codes for photo organization</p>
+        
+        <div id="input-section">
+            <div class="input-group">
+                <label for="patientId">Patient ID *</label>
+                <input 
+                    type="text" 
+                    id="patientId" 
+                    placeholder="Enter Patient ID (e.g., 123456)"
+                    autofocus
+                >
+            </div>
+            
+            <button id="generateBtn" onclick="generateQR()">
+                Generate QR Code
+            </button>
+            
+            <div class="instructions">
+                <h3>📋 Instructions:</h3>
+                <ol>
+                    <li>Take all patient photos first</li>
+                    <li>Generate QR code with patient ID</li>
+                    <li>Take a photo of the QR code (last photo)</li>
+                    <li>Photos will be organized automatically</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div id="qr-result">
+            <div id="qrcode"></div>
+            
+            <div class="patient-info">
+                <p>Patient ID:</p>
+                <strong id="displayPatientId"></strong>
+            </div>
+            
+            <button class="download-btn" onclick="downloadQR()">
+                📥 Download QR Code
+            </button>
+            
+            <button class="new-qr-btn" onclick="resetForm()">
+                ➕ Generate New QR
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        let qrCodeInstance = null;
+        
+        // Allow Enter key to generate QR
+        document.getElementById('patientId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generateQR();
+            }
+        });
+        
+        function generateQR() {
+            const patientId = document.getElementById('patientId').value.trim();
+            
+            if (!patientId) {
+                alert('Please enter a Patient ID');
+                return;
+            }
+            
+            // Clear previous QR code
+            const qrcodeDiv = document.getElementById('qrcode');
+            qrcodeDiv.innerHTML = '';
+            
+            // Generate QR code with format: PATIENT_ID:123456
+            const qrData = `PATIENT_ID:${patientId}`;
+            
+            qrCodeInstance = new QRCode(qrcodeDiv, {
+                text: qrData,
+                width: 256,
+                height: 256,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            // Display patient ID
+            document.getElementById('displayPatientId').textContent = patientId;
+            
+            // Show result section
+            document.getElementById('qr-result').classList.add('show');
+            
+            // Hide input section
+            document.getElementById('input-section').style.display = 'none';
+        }
+        
+        function downloadQR() {
+            const canvas = document.querySelector('#qrcode canvas');
+            const patientId = document.getElementById('displayPatientId').textContent;
+            
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = `QR_${patientId}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+        }
+        
+        function resetForm() {
+            // Reset form
+            document.getElementById('patientId').value = '';
+            document.getElementById('qr-result').classList.remove('show');
+            document.getElementById('input-section').style.display = 'block';
+            document.getElementById('patientId').focus();
+        }
+    </script>
+</body>
+</html>

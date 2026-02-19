@@ -1,0 +1,37 @@
+2026-02-19 17:49:04,178 - PhotoProcessor - INFO - Photo Processor initialized
+2026-02-19 17:49:04,178 - PhotoProcessor - INFO - Watching folder: E:\temp\jepanes\dropbox\test_photos
+2026-02-19 17:49:04,179 - PhotoProcessor - INFO - Starting Photo Processor...
+2026-02-19 17:49:04,179 - PhotoProcessor - INFO - Scanning for existing images...
+2026-02-19 17:49:04,179 - PhotoProcessor - INFO - No existing images found
+2026-02-19 17:49:04,180 - PhotoProcessor - INFO - Monitoring folder for new images...
+2026-02-19 17:51:22,347 - PhotoProcessor - INFO - New image detected: QR_152340.png
+2026-02-19 17:51:24,690 - PhotoProcessor - INFO - QR code detected in QR_152340.png: PATIENT_ID:152340
+2026-02-19 17:51:24,691 - PhotoProcessor - INFO - Deleted QR code image: QR_152340.png
+2026-02-19 17:53:04,171 - PhotoProcessor - INFO - New image detected: img0.jpg
+2026-02-19 17:53:06,365 - PhotoProcessor - INFO - New image detected: img19.jpg
+2026-02-19 17:57:39,557 - PhotoProcessor - INFO - New image detected: QR_152340.png
+2026-02-19 17:57:41,902 - PhotoProcessor - INFO - QR code detected in QR_152340.png: PATIENT_ID:152340
+2026-02-19 17:57:41,902 - PhotoProcessor - INFO - QR code found for patient 152340. Organizing 2 images.
+2026-02-19 17:57:41,904 - PhotoProcessor - INFO - Moved: img0.jpg -> 152340/2024.04.01/
+2026-02-19 17:57:41,906 - PhotoProcessor - INFO - Moved: img19.jpg -> 152340/2024.04.01/
+2026-02-19 17:57:41,906 - PhotoProcessor - INFO - Organization complete - Patient: 152340, Images moved: 2, Time: 0.00s
+2026-02-19 17:57:41,907 - PhotoProcessor - INFO - Deleted QR code image: QR_152340.png
+2026-02-19 17:58:23,304 - PhotoProcessor - INFO - New image detected: img0.jpg
+2026-02-19 17:58:25,493 - PhotoProcessor - INFO - New image detected: img19.jpg
+2026-02-19 17:58:44,882 - PhotoProcessor - INFO - New image detected: QR_152340.png
+2026-02-19 17:58:47,225 - PhotoProcessor - INFO - QR code detected in QR_152340.png: PATIENT_ID:152340
+2026-02-19 17:58:47,226 - PhotoProcessor - INFO - QR code found for patient 152340. Organizing 2 images.
+2026-02-19 17:58:47,227 - PhotoProcessor - INFO - Moved: img0.jpg -> 152340/2024.04.01/
+2026-02-19 17:58:47,228 - PhotoProcessor - INFO - Moved: img19.jpg -> 152340/2024.04.01/
+2026-02-19 17:58:47,229 - PhotoProcessor - INFO - Organization complete - Patient: 152340, Images moved: 2, Time: 0.00s
+2026-02-19 17:58:47,229 - PhotoProcessor - INFO - Deleted QR code image: QR_152340.png
+2026-02-19 18:00:03,416 - PhotoProcessor - INFO - New image detected: test_today.jpg
+2026-02-19 18:00:42,658 - PhotoProcessor - INFO - New image detected: QR_152340.png
+2026-02-19 18:00:44,663 - PhotoProcessor - INFO - QR code detected in QR_152340.png: PATIENT_ID:152340
+2026-02-19 18:00:44,663 - PhotoProcessor - INFO - Deleted QR code image: QR_152340.png
+2026-02-19 18:01:11,977 - PhotoProcessor - INFO - New image detected: QR_230.png
+2026-02-19 18:01:13,981 - PhotoProcessor - INFO - QR code detected in QR_230.png: PATIENT_ID:230
+2026-02-19 18:01:13,981 - PhotoProcessor - INFO - QR code found for patient 230. Organizing 1 images.
+2026-02-19 18:01:13,982 - PhotoProcessor - INFO - Moved: test_today.jpg -> 230/2026.02.19/
+2026-02-19 18:01:13,983 - PhotoProcessor - INFO - Organization complete - Patient: 230, Images moved: 1, Time: 0.00s
+2026-02-19 18:01:13,983 - PhotoProcessor - INFO - Deleted QR code image: QR_230.png
