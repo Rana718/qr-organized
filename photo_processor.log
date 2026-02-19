@@ -35,3 +35,36 @@
 2026-02-19 18:01:13,982 - PhotoProcessor - INFO - Moved: test_today.jpg -> 230/2026.02.19/
 2026-02-19 18:01:13,983 - PhotoProcessor - INFO - Organization complete - Patient: 230, Images moved: 1, Time: 0.00s
 2026-02-19 18:01:13,983 - PhotoProcessor - INFO - Deleted QR code image: QR_230.png
+2026-02-19 18:07:11,536 - PhotoProcessor - INFO - New image detected: new_april_photo.jpg
+2026-02-19 18:30:52,225 - PhotoProcessor - INFO - New image detected: new_april_photo.jpg
+2026-02-19 19:19:13,991 - PhotoProcessor - INFO - New image detected: QR_152340 (1).png
+2026-02-19 19:19:15,996 - PhotoProcessor - INFO - QR code detected in QR_152340 (1).png: PATIENT_ID:152340
+2026-02-19 19:19:15,996 - PhotoProcessor - INFO - QR code found for patient 152340. Organizing 2 images.
+2026-02-19 19:19:15,997 - PhotoProcessor - INFO - Moved: new_april_photo.jpg -> 152340/2024.04.01/
+2026-02-19 19:19:15,997 - PhotoProcessor - WARNING - Could not extract EXIF from new_april_photo.jpg: [Errno 2] No such file or directory: 'E:\\temp\\jepanes\\dropbox\\test_photos\\new_april_photo.jpg'
+2026-02-19 19:19:15,998 - PhotoProcessor - ERROR - Error moving new_april_photo.jpg: [WinError 2] The system cannot find the file specified: 'E:\\temp\\jepanes\\dropbox\\test_photos\\new_april_photo.jpg'
+2026-02-19 19:19:15,998 - PhotoProcessor - INFO - Organization complete - Patient: 152340, Images moved: 1, Time: 0.00s
+2026-02-19 19:19:15,999 - PhotoProcessor - INFO - Deleted QR code image: QR_152340 (1).png
+2026-02-19 19:21:10,615 - PhotoProcessor - INFO - Stopping Photo Processor...
+2026-02-19 19:21:10,617 - PhotoProcessor - INFO - Photo Processor stopped
+2026-02-19 19:26:13,989 - PhotoProcessor - INFO - Photo Processor initialized
+2026-02-19 19:26:13,989 - PhotoProcessor - INFO - Watching folder: E:\temp\jepanes\dropbox\test_photos
+2026-02-19 19:26:13,989 - PhotoProcessor - INFO - Starting Photo Processor...
+2026-02-19 19:26:13,989 - PhotoProcessor - INFO - Scanning for existing images...
+2026-02-19 19:26:13,990 - PhotoProcessor - INFO - Found 1 existing images
+2026-02-19 19:26:14,195 - PhotoProcessor - INFO - Monitoring folder for new images...
+2026-02-19 19:27:15,904 - PhotoProcessor - INFO - New image detected: QR_152340.png
+2026-02-19 19:27:18,093 - PhotoProcessor - INFO - QR code detected in QR_152340.png: PATIENT_ID:152340
+2026-02-19 19:27:18,093 - PhotoProcessor - INFO - QR code found for patient 152340. Organizing 1 images.
+2026-02-19 19:27:18,174 - PhotoProcessor - INFO - Moved: untitled.png -> 152340/2023.10.16/
+2026-02-19 19:27:18,175 - PhotoProcessor - INFO - Organization complete - Patient: 152340, Images moved: 1, Time: 0.08s
+2026-02-19 19:27:18,175 - PhotoProcessor - INFO - Deleted QR code image: QR_152340.png
+2026-02-19 19:27:31,837 - PhotoProcessor - INFO - New image detected: untitled.png
+2026-02-19 19:27:48,548 - PhotoProcessor - INFO - New image detected: QR_12340.png
+2026-02-19 19:27:50,732 - PhotoProcessor - INFO - QR code detected in QR_12340.png: PATIENT_ID:12340
+2026-02-19 19:27:50,732 - PhotoProcessor - INFO - QR code found for patient 12340. Organizing 1 images.
+2026-02-19 19:27:50,811 - PhotoProcessor - INFO - Moved: untitled.png -> 12340/2023.10.16/
+2026-02-19 19:27:50,812 - PhotoProcessor - INFO - Organization complete - Patient: 12340, Images moved: 1, Time: 0.08s
+2026-02-19 19:27:50,812 - PhotoProcessor - INFO - Deleted QR code image: QR_12340.png
+2026-02-19 20:03:54,625 - PhotoProcessor - INFO - Stopping Photo Processor...
+2026-02-19 20:03:54,626 - PhotoProcessor - INFO - Photo Processor stopped
