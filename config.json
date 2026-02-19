@@ -1,5 +1,5 @@
 {
-    "watch_folder": "E:\\temp\\jepanes\\dropbox\\test_photos",
+    "watch_folder": "E:\\temp\\dropbox\\test_photos",
     "log_file": "photo_processor.log",
     "log_level": "INFO",
     "supported_formats": [

@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Photo Auto-Organization System
-Monitors a Dropbox folder and automatically organizes clinical photos based on QR codes.
-"""
-
 import os
 import sys
 import json
@@ -65,22 +59,18 @@ class PhotoProcessor:
         self.logger = logging.getLogger('PhotoProcessor')
         self.logger.setLevel(log_level)
         
-        # File handler
         file_handler = logging.FileHandler(log_file, encoding='utf-8')
         file_handler.setLevel(log_level)
         
-        # Console handler
         console_handler = logging.StreamHandler()
         console_handler.setLevel(log_level)
         
-        # Formatter
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
         file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)
         
-        # Add handlers
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
     
@@ -98,11 +88,9 @@ class PhotoProcessor:
             if exif_data is None:
                 return None
             
-            # Look for DateTimeOriginal (36867) or DateTime (306)
             for tag_id, value in exif_data.items():
                 tag_name = TAGS.get(tag_id, tag_id)
                 if tag_name in ['DateTimeOriginal', 'DateTime']:
-                    # Parse EXIF date format: "YYYY:MM:DD HH:MM:SS"
                     return datetime.strptime(value, "%Y:%m:%d %H:%M:%S")
             
             return None
@@ -117,31 +105,26 @@ class PhotoProcessor:
         if exif_date:
             return exif_date
         
-        # Fallback to file modification time
         self.logger.debug(f"Using file modification time for {image_path.name}")
         return datetime.fromtimestamp(image_path.stat().st_mtime)
     
     def detect_qr_code(self, image_path: Path) -> Optional[str]:
         """Detect and decode QR code in image"""
         try:
-            # Read image with OpenCV
             image = cv2.imread(str(image_path))
             
             if image is None:
                 self.logger.warning(f"Could not read image: {image_path.name}")
                 return None
             
-            # Detect and decode QR codes
             qr_codes = pyzbar.decode(image)
             
             if not qr_codes:
                 return None
             
-            # Get the first QR code data
             qr_data = qr_codes[0].data.decode('utf-8')
             self.logger.info(f"QR code detected in {image_path.name}: {qr_data}")
             
-            # Parse patient ID from QR data
             # Expected format: "PATIENT_ID:123456" or just "123456"
             patient_id = self.parse_patient_id(qr_data)
             
@@ -153,11 +136,9 @@ class PhotoProcessor:
     
     def parse_patient_id(self, qr_data: str) -> Optional[str]:
         """Parse patient ID from QR code data"""
-        # Try format: PATIENT_ID:123456
         if qr_data.startswith("PATIENT_ID:"):
             return qr_data.replace("PATIENT_ID:", "").strip()
         
-        # Otherwise, assume the entire QR data is the patient ID
         return qr_data.strip()
     
     def organize_photos(self, patient_id: str, images: List[Path]):
@@ -171,18 +152,14 @@ class PhotoProcessor:
         
         for image_path in images:
             try:
-                # Get image date
                 image_date = self.get_image_timestamp(image_path)
                 date_folder = image_date.strftime("%Y.%m.%d")
                 
-                # Create destination folder: watch_folder/PatientID/YYYY.MM.DD/
                 dest_folder = self.watch_folder / patient_id / date_folder
                 dest_folder.mkdir(parents=True, exist_ok=True)
                 
-                # Move image
                 dest_path = dest_folder / image_path.name
                 
-                # Handle duplicate filenames
                 if dest_path.exists():
                     base_name = image_path.stem
                     extension = image_path.suffix
@@ -226,19 +203,15 @@ class PhotoProcessor:
         if not new_images:
             return
         
-        # Add to pending images
         self.pending_images.extend(new_images)
         
-        # Sort by timestamp
         self.pending_images.sort(key=lambda p: self.get_image_timestamp(p))
         
-        # Look for QR codes in the pending images
         for i, image_path in enumerate(self.pending_images):
             patient_id = self.detect_qr_code(image_path)
             
             if patient_id:
-                # Found QR code! Organize all images before this one
-                images_to_organize = self.pending_images[:i]  # All images before QR
+                images_to_organize = self.pending_images[:i] 
                 
                 if images_to_organize:
                     self.logger.info(
@@ -247,14 +220,12 @@ class PhotoProcessor:
                     )
                     self.organize_photos(patient_id, images_to_organize)
                 
-                # Remove the QR code image
                 try:
                     image_path.unlink()
                     self.logger.info(f"Deleted QR code image: {image_path.name}")
                 except Exception as e:
                     self.logger.error(f"Could not delete QR image {image_path.name}: {e}")
                 
-                # Clear processed images from pending list
                 self.pending_images = self.pending_images[i+1:]
                 return
     
@@ -262,10 +233,8 @@ class PhotoProcessor:
         """Main run loop"""
         self.logger.info("Starting Photo Processor...")
         
-        # Process existing images first
         self.scan_existing_images()
         
-        # Setup file system watcher
         event_handler = PhotoEventHandler(self)
         observer = Observer()
         observer.schedule(event_handler, str(self.watch_folder), recursive=False)
@@ -296,7 +265,7 @@ class PhotoEventHandler(FileSystemEventHandler):
     def __init__(self, processor: PhotoProcessor):
         self.processor = processor
         self.last_process_time = 0
-        self.process_delay = 2  # Wait 2 seconds before processing to allow file writes to complete
+        self.process_delay = 2 
     
     def on_created(self, event):
         """Handle file creation events"""
@@ -308,10 +277,8 @@ class PhotoEventHandler(FileSystemEventHandler):
         if self.processor.is_image_file(file_path):
             self.processor.logger.info(f"New image detected: {file_path.name}")
             
-            # Wait a bit for file to be fully written
             time.sleep(self.process_delay)
             
-            # Process the new image
             self.processor.process_images([file_path])
 
 
@@ -320,7 +287,6 @@ def main():
     print("Photo Auto-Organization System")
     print("================================\n")
     
-    # Check if config file exists
     if not os.path.exists("config.json"):
         print("Error: config.json not found!")
         print("Please create a configuration file first.")
