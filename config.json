@@ -1,5 +1,5 @@
 {
-    "watch_folder": "E:\\temp\\dropbox\\test_photos",
+    "watch_folder": "E:\\temp\\jepanes\\dropbox\\test_photos",
     "log_file": "photo_processor.log",
     "log_level": "INFO",
     "supported_formats": [
@@ -11,5 +11,9 @@
         ".JPG",
         ".JPEG",
         ".PNG"
-    ]
+    ],
+    "max_photos_per_session": 200,
+    "max_minutes_window": 60,
+    "backup_folder_name": "_backup",
+    "error_folder_name": "_error"
 }

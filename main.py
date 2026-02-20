@@ -4,10 +4,9 @@ import json
 import time
 import shutil
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, List, Tuple
-import re
+from typing import Optional, List
 
 import cv2
 from pyzbar import pyzbar
@@ -19,25 +18,29 @@ from watchdog.events import FileSystemEventHandler
 
 class PhotoProcessor:
     """Main photo processing class"""
-    
+
     def __init__(self, config_path: str = "config.json"):
         """Initialize the photo processor with configuration"""
         self.config = self.load_config(config_path)
         self.watch_folder = Path(self.config['watch_folder'])
-        self.processed_files = set()
-        self.pending_images = []
-        
+
+        # Session limits from config
+        self.max_photos_per_session = self.config.get('max_photos_per_session', 200)
+        self.max_minutes_window = self.config.get('max_minutes_window', 60)
+        self.backup_folder_name = self.config.get('backup_folder_name', '_backup')
+        self.error_folder_name = self.config.get('error_folder_name', '_error')
+
         # Setup logging
         self.setup_logging()
-        
+
         # Ensure watch folder exists
         if not self.watch_folder.exists():
             self.logger.error(f"Watch folder does not exist: {self.watch_folder}")
             raise FileNotFoundError(f"Watch folder not found: {self.watch_folder}")
-        
+
         self.logger.info("Photo Processor initialized")
         self.logger.info(f"Watching folder: {self.watch_folder}")
-    
+
     def load_config(self, config_path: str) -> dict:
         """Load configuration from JSON file"""
         try:
@@ -49,197 +52,312 @@ class PhotoProcessor:
         except json.JSONDecodeError:
             print(f"Error: Invalid JSON in configuration file '{config_path}'.")
             sys.exit(1)
-    
+
     def setup_logging(self):
         """Setup logging configuration"""
         log_file = self.config.get('log_file', 'photo_processor.log')
         log_level = getattr(logging, self.config.get('log_level', 'INFO').upper())
-        
+
         # Create logger
         self.logger = logging.getLogger('PhotoProcessor')
         self.logger.setLevel(log_level)
-        
+
         file_handler = logging.FileHandler(log_file, encoding='utf-8')
         file_handler.setLevel(log_level)
-        
+
         console_handler = logging.StreamHandler()
         console_handler.setLevel(log_level)
-        
+
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
         file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)
-        
+
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
-    
+
     def is_image_file(self, filepath: Path) -> bool:
         """Check if file is a supported image format"""
         supported_formats = self.config.get('supported_formats', ['.jpg', '.jpeg', '.png', '.gif', '.bmp'])
-        return filepath.suffix.lower() in supported_formats
-    
+        return filepath.suffix.lower() in [fmt.lower() for fmt in supported_formats]
+
     def get_exif_date(self, image_path: Path) -> Optional[datetime]:
         """Extract capture date from EXIF metadata"""
         try:
             image = Image.open(image_path)
             exif_data = image._getexif()
-            
+
             if exif_data is None:
                 return None
-            
+
             for tag_id, value in exif_data.items():
                 tag_name = TAGS.get(tag_id, tag_id)
                 if tag_name in ['DateTimeOriginal', 'DateTime']:
                     return datetime.strptime(value, "%Y:%m:%d %H:%M:%S")
-            
+
             return None
         except Exception as e:
             self.logger.warning(f"Could not extract EXIF from {image_path.name}: {e}")
             return None
-    
+
     def get_image_timestamp(self, image_path: Path) -> datetime:
         """Get image timestamp from EXIF or file modification time"""
         exif_date = self.get_exif_date(image_path)
-        
+
         if exif_date:
             return exif_date
-        
+
         self.logger.debug(f"Using file modification time for {image_path.name}")
         return datetime.fromtimestamp(image_path.stat().st_mtime)
-    
+
     def detect_qr_code(self, image_path: Path) -> Optional[str]:
         """Detect and decode QR code in image"""
         try:
             image = cv2.imread(str(image_path))
-            
+
             if image is None:
                 self.logger.warning(f"Could not read image: {image_path.name}")
                 return None
-            
+
             qr_codes = pyzbar.decode(image)
-            
+
             if not qr_codes:
                 return None
-            
+
             qr_data = qr_codes[0].data.decode('utf-8')
             self.logger.info(f"QR code detected in {image_path.name}: {qr_data}")
-            
+
             # Expected format: "PATIENT_ID:123456" or just "123456"
             patient_id = self.parse_patient_id(qr_data)
-            
+
             return patient_id
-        
+
         except Exception as e:
             self.logger.error(f"Error detecting QR code in {image_path.name}: {e}")
             return None
-    
+
     def parse_patient_id(self, qr_data: str) -> Optional[str]:
         """Parse patient ID from QR code data"""
         if qr_data.startswith("PATIENT_ID:"):
             return qr_data.replace("PATIENT_ID:", "").strip()
-        
+
         return qr_data.strip()
-    
-    def organize_photos(self, patient_id: str, images: List[Path]):
-        """Organize photos into patient folder structure"""
-        if not images:
-            self.logger.warning(f"No images to organize for patient {patient_id}")
-            return
-        
-        start_time = time.time()
-        moved_count = 0
-        
-        for image_path in images:
-            try:
-                image_date = self.get_image_timestamp(image_path)
-                date_folder = image_date.strftime("%Y.%m.%d")
-                
-                dest_folder = self.watch_folder / patient_id / date_folder
-                dest_folder.mkdir(parents=True, exist_ok=True)
-                
-                dest_path = dest_folder / image_path.name
-                
-                if dest_path.exists():
-                    base_name = image_path.stem
-                    extension = image_path.suffix
-                    counter = 1
-                    while dest_path.exists():
-                        dest_path = dest_folder / f"{base_name}_{counter}{extension}"
-                        counter += 1
-                
-                shutil.move(str(image_path), str(dest_path))
-                self.logger.info(f"Moved: {image_path.name} -> {patient_id}/{date_folder}/")
-                moved_count += 1
-                
-            except Exception as e:
-                self.logger.error(f"Error moving {image_path.name}: {e}")
-        
-        processing_time = time.time() - start_time
-        
-        self.logger.info(
-            f"Organization complete - Patient: {patient_id}, "
-            f"Images moved: {moved_count}, "
-            f"Time: {processing_time:.2f}s"
+
+    def _should_skip_path(self, path: Path) -> bool:
+        """Check if a path should be skipped during scanning.
+
+        Skips files/folders starting with '_' or '.' (e.g., _backup, _error).
+        """
+        name = path.name
+        return name.startswith('_') or name.startswith('.')
+
+    def _collect_qualifying_photos(self, qr_timestamp: datetime, qr_image_path: Path) -> List[Path]:
+        """Scan watch_folder for photos taken within the time window before the QR photo.
+
+        Returns list of Path objects for qualifying photos (excluding the QR photo itself).
+        """
+        cutoff_time = qr_timestamp - timedelta(minutes=self.max_minutes_window)
+        qualifying = []
+
+        for file in self.watch_folder.iterdir():
+            if not file.is_file():
+                continue
+            if self._should_skip_path(file):
+                continue
+            if not self.is_image_file(file):
+                continue
+            if file.resolve() == qr_image_path.resolve():
+                continue
+
+            timestamp = self.get_image_timestamp(file)
+            if cutoff_time <= timestamp <= qr_timestamp:
+                qualifying.append(file)
+
+        qualifying.sort(key=lambda p: self.get_image_timestamp(p))
+        return qualifying
+
+    def _generate_session_id(self, qr_timestamp: datetime) -> str:
+        """Generate session ID from QR photo timestamp. Format: YYYYMMDD_HHMM"""
+        return qr_timestamp.strftime("%Y%m%d_%H%M")
+
+    def _create_backup(self, session_id: str, photos: List[Path], qr_photo: Path) -> Path:
+        """Create backup of all photos (including QR) before moving.
+
+        Copies to: watch_folder/_backup/{session_id}/
+        Returns the backup folder path.
+        """
+        backup_dir = self.watch_folder / self.backup_folder_name / session_id
+        backup_dir.mkdir(parents=True, exist_ok=True)
+
+        all_files = photos + [qr_photo]
+        for photo in all_files:
+            dest = backup_dir / photo.name
+            shutil.copy2(str(photo), str(dest))
+            self.logger.debug(f"Backed up: {photo.name} -> {backup_dir.name}/")
+
+        self.logger.info(f"Backup created: {backup_dir} ({len(all_files)} files)")
+        return backup_dir
+
+    def _write_error_report(self, session_id: str, patient_id: str, error: Exception, context: str):
+        """Write error details to _error/ folder."""
+        error_dir = self.watch_folder / self.error_folder_name
+        error_dir.mkdir(parents=True, exist_ok=True)
+
+        error_file = error_dir / f"error_{session_id}.txt"
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        content = (
+            f"Error Report\n"
+            f"============\n"
+            f"Timestamp: {timestamp}\n"
+            f"Session ID: {session_id}\n"
+            f"Patient ID: {patient_id}\n"
+            f"Context: {context}\n"
+            f"Error Type: {type(error).__name__}\n"
+            f"Error Message: {str(error)}\n"
         )
-    
+
+        with open(error_file, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+        self.logger.error(f"Error report written to {error_file}")
+
+    def organize_photos(self, patient_id: str, photos: List[Path], qr_photo: Path, qr_timestamp: datetime) -> int:
+        """Move qualifying photos + QR photo to patient_id/YYYY.MM.DD/ folder.
+
+        All photos in a session go to the same date folder (based on QR photo date).
+        The QR photo is KEPT (moved to destination), not deleted.
+        Returns the number of files moved.
+        """
+        date_folder = qr_timestamp.strftime("%Y.%m.%d")
+        dest_folder = self.watch_folder / patient_id / date_folder
+        dest_folder.mkdir(parents=True, exist_ok=True)
+
+        all_files = photos + [qr_photo]
+        moved_count = 0
+
+        for image_path in all_files:
+            dest_path = dest_folder / image_path.name
+
+            # Handle filename collisions
+            if dest_path.exists():
+                base_name = image_path.stem
+                extension = image_path.suffix
+                counter = 1
+                while dest_path.exists():
+                    dest_path = dest_folder / f"{base_name}_{counter}{extension}"
+                    counter += 1
+
+            shutil.move(str(image_path), str(dest_path))
+            self.logger.debug(f"Moved: {image_path.name} -> {patient_id}/{date_folder}/")
+            moved_count += 1
+
+        return moved_count
+
+    def _process_qr_trigger(self, qr_image_path: Path):
+        """Handle a detected QR code trigger photo.
+
+        Orchestrates the full session: validate, collect, backup, organize, log.
+        """
+        patient_id = self.detect_qr_code(qr_image_path)
+        if not patient_id:
+            return  # Safety guard (A): no QR, do nothing
+
+        qr_timestamp = self.get_image_timestamp(qr_image_path)
+        session_id = self._generate_session_id(qr_timestamp)
+
+        self.logger.info(f"QR trigger: patient={patient_id}, session={session_id}")
+
+        try:
+            # Step 1: Collect qualifying photos from filesystem
+            qualifying_photos = self._collect_qualifying_photos(qr_timestamp, qr_image_path)
+
+            # Step 2: Safety guard (B): max photos check
+            if len(qualifying_photos) > self.max_photos_per_session:
+                error_msg = (
+                    f"Photo count {len(qualifying_photos)} exceeds maximum "
+                    f"{self.max_photos_per_session} for session {session_id}"
+                )
+                self.logger.error(error_msg)
+                self._write_error_report(
+                    session_id, patient_id,
+                    ValueError(error_msg),
+                    "Max photos per session exceeded"
+                )
+                self.logger.info(
+                    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ERROR "
+                    f"patient={patient_id} count={len(qualifying_photos)} session={session_id}"
+                )
+                return  # STOP processing
+
+            # Step 3: Create backup BEFORE moving
+            self._create_backup(session_id, qualifying_photos, qr_image_path)
+
+            # Step 4: Move all photos + QR to patient folder
+            moved_count = self.organize_photos(
+                patient_id, qualifying_photos, qr_image_path, qr_timestamp
+            )
+
+            # Step 5: Session summary log
+            self.logger.info(
+                f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} OK "
+                f"patient={patient_id} count={moved_count} session={session_id}"
+            )
+
+        except Exception as e:
+            self.logger.error(f"Session {session_id} failed: {e}")
+            self._write_error_report(session_id, patient_id, e, "Session processing failed")
+            self.logger.info(
+                f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ERROR "
+                f"patient={patient_id} count=0 session={session_id}"
+            )
+
+    def process_images(self, new_images: List[Path]):
+        """Process newly detected images. Each image is checked for QR code.
+
+        If QR found -> triggers session organization.
+        If no QR found -> do nothing (safety guard A).
+        """
+        for image_path in new_images:
+            if not image_path.exists():
+                self.logger.warning(f"Image no longer exists: {image_path.name}")
+                continue
+
+            patient_id = self.detect_qr_code(image_path)
+            if patient_id:
+                self._process_qr_trigger(image_path)
+
     def scan_existing_images(self):
         """Scan for existing images in the watch folder at startup"""
         self.logger.info("Scanning for existing images...")
-        
+
         images = []
         for file in self.watch_folder.iterdir():
-            if file.is_file() and self.is_image_file(file):
+            if not file.is_file():
+                continue
+            if self._should_skip_path(file):
+                continue
+            if self.is_image_file(file):
                 images.append(file)
-        
+
         if images:
             self.logger.info(f"Found {len(images)} existing images")
             self.process_images(images)
         else:
             self.logger.info("No existing images found")
-    
-    def process_images(self, new_images: List[Path]):
-        """Process a batch of images to find QR codes and organize"""
-        if not new_images:
-            return
-        
-        self.pending_images.extend(new_images)
-        
-        self.pending_images.sort(key=lambda p: self.get_image_timestamp(p))
-        
-        for i, image_path in enumerate(self.pending_images):
-            patient_id = self.detect_qr_code(image_path)
-            
-            if patient_id:
-                images_to_organize = self.pending_images[:i] 
-                
-                if images_to_organize:
-                    self.logger.info(
-                        f"QR code found for patient {patient_id}. "
-                        f"Organizing {len(images_to_organize)} images."
-                    )
-                    self.organize_photos(patient_id, images_to_organize)
-                
-                try:
-                    image_path.unlink()
-                    self.logger.info(f"Deleted QR code image: {image_path.name}")
-                except Exception as e:
-                    self.logger.error(f"Could not delete QR image {image_path.name}: {e}")
-                
-                self.pending_images = self.pending_images[i+1:]
-                return
-    
+
     def run(self):
         """Main run loop"""
         self.logger.info("Starting Photo Processor...")
-        
+
         self.scan_existing_images()
-        
+
         event_handler = PhotoEventHandler(self)
         observer = Observer()
         observer.schedule(event_handler, str(self.watch_folder), recursive=False)
         observer.start()
-        
+
         self.logger.info("Monitoring folder for new images...")
         print("\n" + "="*60)
         print("Photo Auto-Organization System Running")
@@ -247,38 +365,42 @@ class PhotoProcessor:
         print(f"Watching: {self.watch_folder}")
         print("Press Ctrl+C to stop")
         print("="*60 + "\n")
-        
+
         try:
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
             self.logger.info("Stopping Photo Processor...")
             observer.stop()
-        
+
         observer.join()
         self.logger.info("Photo Processor stopped")
 
 
 class PhotoEventHandler(FileSystemEventHandler):
     """File system event handler for new images"""
-    
+
     def __init__(self, processor: PhotoProcessor):
         self.processor = processor
         self.last_process_time = 0
-        self.process_delay = 2 
-    
+        self.process_delay = 2
+
     def on_created(self, event):
         """Handle file creation events"""
         if event.is_directory:
             return
-        
+
         file_path = Path(event.src_path)
-        
+
+        # Skip special files/folders
+        if file_path.name.startswith('_') or file_path.name.startswith('.'):
+            return
+
         if self.processor.is_image_file(file_path):
             self.processor.logger.info(f"New image detected: {file_path.name}")
-            
+
             time.sleep(self.process_delay)
-            
+
             self.processor.process_images([file_path])
 
 
@@ -286,12 +408,12 @@ def main():
     """Main entry point"""
     print("Photo Auto-Organization System")
     print("================================\n")
-    
+
     if not os.path.exists("config.json"):
         print("Error: config.json not found!")
         print("Please create a configuration file first.")
         sys.exit(1)
-    
+
     try:
         processor = PhotoProcessor()
         processor.run()

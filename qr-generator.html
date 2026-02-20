@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -185,13 +185,13 @@
             line-height: 1.4;
         }
 
-        .download-btn {
+        .fullscreen-btn {
             margin-top: 15px;
-            background: #27ae60;
+            background: #8e44ad;
         }
 
-        .download-btn:hover {
-            background: #229954;
+        .fullscreen-btn:hover {
+            background: #7d3c98;
         }
 
         .new-qr-btn {
@@ -201,6 +201,62 @@
 
         .new-qr-btn:hover {
             background: #7f8c8d;
+        }
+
+        #fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        #fullscreen-overlay.show {
+            display: flex;
+        }
+
+        #fullscreen-qr-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            padding: 40px;
+        }
+
+        #fullscreen-qr-container img {
+            max-width: 80vmin;
+            max-height: 80vmin;
+            width: auto !important;
+            height: auto !important;
+            image-rendering: pixelated;
+        }
+
+        .exit-fullscreen-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #e74c3c;
+            padding: 10px 20px;
+            font-size: 16px;
+            width: auto;
+            border-radius: 6px;
+        }
+
+        .exit-fullscreen-btn:hover {
+            background: #c0392b;
+        }
+
+        #fullscreen-patient-label {
+            position: absolute;
+            bottom: 30px;
+            color: #7f8c8d;
+            font-size: 18px;
         }
 
         @media (max-width: 480px) {
@@ -237,7 +293,7 @@
 
 <body>
     <div class="container">
-        <h1>🏥 Patient QR Generator</h1>
+        <h1>Patient QR Generator</h1>
         <p class="subtitle">Generate QR codes for photo organization</p>
 
         <div id="input-section">
@@ -251,11 +307,12 @@
             </button>
 
             <div class="instructions">
-                <h3>📋 Instructions:</h3>
+                <h3>Instructions:</h3>
                 <ol>
                     <li>Take all patient photos first</li>
-                    <li>Generate QR code with patient ID</li>
-                    <li>Take a photo of the QR code (last photo)</li>
+                    <li>Enter patient ID and generate QR code</li>
+                    <li>Use "Fullscreen QR" for a larger display</li>
+                    <li>Photograph the QR on screen with camera (last shot)</li>
                     <li>Photos will be organized automatically</li>
                 </ol>
             </div>
@@ -269,14 +326,20 @@
                 <strong id="displayPatientId"></strong>
             </div>
 
-            <button class="download-btn" onclick="downloadQR()">
-                📥 Download QR Code
+            <button class="fullscreen-btn" onclick="toggleFullscreen()">
+                Fullscreen QR
             </button>
 
             <button class="new-qr-btn" onclick="resetForm()">
-                ➕ Generate New QR
+                Generate New QR
             </button>
         </div>
+    </div>
+
+    <div id="fullscreen-overlay">
+        <button class="exit-fullscreen-btn" onclick="exitFullscreen()">Close</button>
+        <div id="fullscreen-qr-container"></div>
+        <div id="fullscreen-patient-label"></div>
     </div>
 
     <script src="qrcode.min.js"></script>
@@ -305,8 +368,8 @@
 
             qrCodeInstance = new QRCode(qrcodeDiv, {
                 text: qrData,
-                width: 256,
-                height: 256,
+                width: 300,
+                height: 300,
                 colorDark: "#000000",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.H
@@ -319,29 +382,42 @@
             document.getElementById('input-section').style.display = 'none';
         }
 
-        function downloadQR() {
-            const canvas = document.querySelector('#qrcode canvas');
+        function toggleFullscreen() {
+            const overlay = document.getElementById('fullscreen-overlay');
+            const container = document.getElementById('fullscreen-qr-container');
+            const originalCanvas = document.querySelector('#qrcode canvas');
             const patientId = document.getElementById('displayPatientId').textContent;
 
-            if (canvas) {
-                const padding = 40;
-                const newCanvas = document.createElement('canvas');
-                const ctx = newCanvas.getContext('2d');
-                
-                newCanvas.width = canvas.width + (padding * 2);
-                newCanvas.height = canvas.height + (padding * 2);
-                
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
-                
-                ctx.drawImage(canvas, padding, padding);
-                
-                const link = document.createElement('a');
-                link.download = `QR_${patientId}.png`;
-                link.href = newCanvas.toDataURL('image/png');
-                link.click();
+            if (originalCanvas) {
+                container.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = originalCanvas.toDataURL('image/png');
+                img.style.width = '80vmin';
+                img.style.height = '80vmin';
+                img.style.imageRendering = 'pixelated';
+                container.appendChild(img);
+            }
+
+            document.getElementById('fullscreen-patient-label').textContent = 'Patient: ' + patientId;
+            overlay.classList.add('show');
+
+            if (overlay.requestFullscreen) {
+                overlay.requestFullscreen();
             }
         }
+
+        function exitFullscreen() {
+            document.getElementById('fullscreen-overlay').classList.remove('show');
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => { });
+            }
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                exitFullscreen();
+            }
+        });
 
         function resetForm() {
             document.getElementById('patientId').value = '';
