@@ -181,22 +181,31 @@ class PhotoProcessor:
         """Generate session ID from QR photo timestamp. Format: YYYYMMDD_HHMM"""
         return qr_timestamp.strftime("%Y%m%d_%H%M")
 
-    def _create_backup(self, session_id: str, photos: List[Path], qr_photo: Path) -> Path:
+    def _create_backup(self, session_id: str, photos: List[Path], qr_photo: Path, patient_id: str) -> Path:
         """Create backup of all photos (including QR) before moving.
 
         Copies to: watch_folder/_backup/{session_id}/
+        Files are renamed with sequential names matching the destination.
         Returns the backup folder path.
         """
         backup_dir = self.watch_folder / self.backup_folder_name / session_id
         backup_dir.mkdir(parents=True, exist_ok=True)
 
-        all_files = photos + [qr_photo]
-        for photo in all_files:
-            dest = backup_dir / photo.name
+        # Backup patient photos with sequential names
+        for i, photo in enumerate(photos):
+            new_name = f"{i + 1:03d}{photo.suffix}"
+            dest = backup_dir / new_name
             shutil.copy2(str(photo), str(dest))
-            self.logger.debug(f"Backed up: {photo.name} -> {backup_dir.name}/")
+            self.logger.debug(f"Backed up: {photo.name} -> {backup_dir.name}/{new_name}")
 
-        self.logger.info(f"Backup created: {backup_dir} ({len(all_files)} files)")
+        # Backup QR photo with identifiable name
+        qr_backup_name = f"QR_{patient_id}{qr_photo.suffix}"
+        dest = backup_dir / qr_backup_name
+        shutil.copy2(str(qr_photo), str(dest))
+        self.logger.debug(f"Backed up QR: {qr_photo.name} -> {backup_dir.name}/{qr_backup_name}")
+
+        total = len(photos) + 1
+        self.logger.info(f"Backup created: {backup_dir} ({total} files)")
         return backup_dir
 
     def _write_error_report(self, session_id: str, patient_id: str, error: Exception, context: str):
@@ -234,24 +243,34 @@ class PhotoProcessor:
         dest_folder = self.watch_folder / patient_id / date_folder
         dest_folder.mkdir(parents=True, exist_ok=True)
 
-        all_files = photos + [qr_photo]
         moved_count = 0
 
-        for image_path in all_files:
-            dest_path = dest_folder / image_path.name
+        existing_nums = []
+        if dest_folder.exists():
+            for f in dest_folder.iterdir():
+                if f.is_file() and f.stem.isdigit():
+                    existing_nums.append(int(f.stem))
+        seq_start = max(existing_nums, default=0) + 1
 
-            # Handle filename collisions
-            if dest_path.exists():
-                base_name = image_path.stem
-                extension = image_path.suffix
-                counter = 1
-                while dest_path.exists():
-                    dest_path = dest_folder / f"{base_name}_{counter}{extension}"
-                    counter += 1
+        for i, image_path in enumerate(photos):
+            seq_num = seq_start + i
+            new_name = f"{seq_num:03d}{image_path.suffix}"
+            dest_path = dest_folder / new_name
 
             shutil.move(str(image_path), str(dest_path))
-            self.logger.debug(f"Moved: {image_path.name} -> {patient_id}/{date_folder}/")
+            self.logger.debug(f"Moved: {image_path.name} -> {patient_id}/{date_folder}/{new_name}")
             moved_count += 1
+
+        qr_dest_name = f"QR_{patient_id}{qr_photo.suffix}"
+        qr_dest_path = dest_folder / qr_dest_name
+        if qr_dest_path.exists():
+            counter = 1
+            while qr_dest_path.exists():
+                qr_dest_path = dest_folder / f"QR_{patient_id}_{counter}{qr_photo.suffix}"
+                counter += 1
+        shutil.move(str(qr_photo), str(qr_dest_path))
+        self.logger.debug(f"Moved QR: {qr_photo.name} -> {patient_id}/{date_folder}/{qr_dest_path.name}")
+        moved_count += 1
 
         return moved_count
 
@@ -262,7 +281,7 @@ class PhotoProcessor:
         """
         patient_id = self.detect_qr_code(qr_image_path)
         if not patient_id:
-            return  # Safety guard (A): no QR, do nothing
+            return  
 
         qr_timestamp = self.get_image_timestamp(qr_image_path)
         session_id = self._generate_session_id(qr_timestamp)
@@ -270,10 +289,8 @@ class PhotoProcessor:
         self.logger.info(f"QR trigger: patient={patient_id}, session={session_id}")
 
         try:
-            # Step 1: Collect qualifying photos from filesystem
             qualifying_photos = self._collect_qualifying_photos(qr_timestamp, qr_image_path)
 
-            # Step 2: Safety guard (B): max photos check
             if len(qualifying_photos) > self.max_photos_per_session:
                 error_msg = (
                     f"Photo count {len(qualifying_photos)} exceeds maximum "
@@ -289,17 +306,14 @@ class PhotoProcessor:
                     f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ERROR "
                     f"patient={patient_id} count={len(qualifying_photos)} session={session_id}"
                 )
-                return  # STOP processing
+                return  
 
-            # Step 3: Create backup BEFORE moving
-            self._create_backup(session_id, qualifying_photos, qr_image_path)
+            self._create_backup(session_id, qualifying_photos, qr_image_path, patient_id)
 
-            # Step 4: Move all photos + QR to patient folder
             moved_count = self.organize_photos(
                 patient_id, qualifying_photos, qr_image_path, qr_timestamp
             )
 
-            # Step 5: Session summary log
             self.logger.info(
                 f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} OK "
                 f"patient={patient_id} count={moved_count} session={session_id}"
@@ -392,7 +406,6 @@ class PhotoEventHandler(FileSystemEventHandler):
 
         file_path = Path(event.src_path)
 
-        # Skip special files/folders
         if file_path.name.startswith('_') or file_path.name.startswith('.'):
             return
 

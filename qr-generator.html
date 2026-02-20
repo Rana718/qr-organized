@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient QR Code Generator</title>
+    <title>患者QRコード生成</title>
     <style>
         * {
             margin: 0;
@@ -293,27 +293,27 @@
 
 <body>
     <div class="container">
-        <h1>Patient QR Generator</h1>
-        <p class="subtitle">Generate QR codes for photo organization</p>
+        <h1>患者QRコード生成</h1>
+        <p class="subtitle">写真整理用QRコードを生成します</p>
 
         <div id="input-section">
             <div class="input-group">
-                <label for="patientId">Patient ID *</label>
-                <input type="text" id="patientId" placeholder="Enter Patient ID (e.g., 123456)" autofocus>
+                <label for="patientId">患者番号 *</label>
+                <input type="text" id="patientId" placeholder="患者番号を入力（例：123456）" autofocus>
             </div>
 
             <button id="generateBtn" onclick="generateQR()">
-                Generate QR Code
+                QRコード生成
             </button>
 
             <div class="instructions">
-                <h3>Instructions:</h3>
+                <h3>使い方：</h3>
                 <ol>
-                    <li>Take all patient photos first</li>
-                    <li>Enter patient ID and generate QR code</li>
-                    <li>Use "Fullscreen QR" for a larger display</li>
-                    <li>Photograph the QR on screen with camera (last shot)</li>
-                    <li>Photos will be organized automatically</li>
+                    <li>先に患者の症例写真をすべて撮影する</li>
+                    <li>患者番号を入力してQRコードを生成する</li>
+                    <li>「全画面表示」で大きく表示する</li>
+                    <li>カメラでこの画面のQRコードを撮影する（最後の1枚）</li>
+                    <li>写真が自動的に整理されます</li>
                 </ol>
             </div>
         </div>
@@ -322,22 +322,22 @@
             <div id="qrcode"></div>
 
             <div class="patient-info">
-                <p>Patient ID:</p>
+                <p>患者番号：</p>
                 <strong id="displayPatientId"></strong>
             </div>
 
             <button class="fullscreen-btn" onclick="toggleFullscreen()">
-                Fullscreen QR
+                全画面表示
             </button>
 
             <button class="new-qr-btn" onclick="resetForm()">
-                Generate New QR
+                新しいQRを生成
             </button>
         </div>
     </div>
 
     <div id="fullscreen-overlay">
-        <button class="exit-fullscreen-btn" onclick="exitFullscreen()">Close</button>
+        <button class="exit-fullscreen-btn" onclick="exitFullscreen()">閉じる</button>
         <div id="fullscreen-qr-container"></div>
         <div id="fullscreen-patient-label"></div>
     </div>
@@ -356,7 +356,7 @@
             const patientId = document.getElementById('patientId').value.trim();
 
             if (!patientId) {
-                alert('Please enter a Patient ID');
+                alert('患者番号を入力してください');
                 return;
             }
 
@@ -398,7 +398,7 @@
                 container.appendChild(img);
             }
 
-            document.getElementById('fullscreen-patient-label').textContent = 'Patient: ' + patientId;
+            document.getElementById('fullscreen-patient-label').textContent = '患者番号: ' + patientId;
             overlay.classList.add('show');
 
             if (overlay.requestFullscreen) {
