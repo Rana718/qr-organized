@@ -198,3 +198,39 @@
 2026-02-20 21:00:20,041 - PhotoProcessor - INFO - 2026-02-20 21:00:20 OK patient=7777 count=4 session=20260220_2047
 2026-02-20 21:01:29,733 - PhotoProcessor - INFO - Stopping Photo Processor...
 2026-02-20 21:01:29,735 - PhotoProcessor - INFO - Photo Processor stopped
+2026-02-20 21:08:11,662 - PhotoProcessor - INFO - Photo Processor initialized
+2026-02-20 21:08:11,662 - PhotoProcessor - INFO - Watching folder: E:\temp\jepanes\dropbox\test_photos
+2026-02-20 21:08:14,253 - PhotoProcessor - INFO - QR code detected in qr_1111.png: PATIENT_ID:1111
+2026-02-20 21:08:14,262 - PhotoProcessor - INFO - QR code detected in qr_1111.png: PATIENT_ID:1111
+2026-02-20 21:08:14,277 - PhotoProcessor - INFO - QR trigger: patient=1111, session=20260220_2108
+2026-02-20 21:08:14,291 - PhotoProcessor - INFO - Backup created: E:\temp\jepanes\dropbox\test_photos\_backup\20260220_2108 (3 files)
+2026-02-20 21:08:14,293 - PhotoProcessor - INFO - 2026-02-20 21:08:14 OK patient=1111 count=3 session=20260220_2108
+2026-02-20 21:08:14,302 - PhotoProcessor - INFO - QR code detected in qr_2222.png: PATIENT_ID:2222
+2026-02-20 21:08:14,312 - PhotoProcessor - INFO - QR code detected in qr_2222.png: PATIENT_ID:2222
+2026-02-20 21:08:14,313 - PhotoProcessor - INFO - QR trigger: patient=2222, session=20260220_2108
+2026-02-20 21:08:14,314 - PhotoProcessor - INFO - Backup created: E:\temp\jepanes\dropbox\test_photos\_backup\20260220_2108 (1 files)
+2026-02-20 21:08:14,315 - PhotoProcessor - INFO - 2026-02-20 21:08:14 OK patient=2222 count=1 session=20260220_2108
+2026-02-20 21:08:18,860 - PhotoProcessor - INFO - Photo Processor initialized
+2026-02-20 21:08:18,860 - PhotoProcessor - INFO - Watching folder: E:\temp\jepanes\dropbox\test_photos
+2026-02-20 21:08:18,860 - PhotoProcessor - INFO - Starting Photo Processor...
+2026-02-20 21:08:18,861 - PhotoProcessor - INFO - Scanning for existing images...
+2026-02-20 21:08:18,861 - PhotoProcessor - INFO - No existing images found
+2026-02-20 21:08:18,862 - PhotoProcessor - INFO - Monitoring folder for new images...
+2026-02-20 21:09:48,699 - PhotoProcessor - INFO - Photo Processor initialized
+2026-02-20 21:09:48,699 - PhotoProcessor - INFO - Watching folder: E:\temp\jepanes\dropbox\test_photos
+2026-02-20 21:09:48,702 - PhotoProcessor - INFO - New image detected: photo_a.jpg
+2026-02-20 21:09:50,708 - PhotoProcessor - INFO - New image detected: photo_b.jpg
+2026-02-20 21:09:52,714 - PhotoProcessor - INFO - New image detected: qr_aaaa.png
+2026-02-20 21:09:52,784 - PhotoProcessor - INFO - QR code detected in qr_aaaa.png: PATIENT_ID:AAAA
+2026-02-20 21:09:52,786 - PhotoProcessor - INFO - QR trigger: patient=AAAA, session=20260220_210950
+2026-02-20 21:09:52,791 - PhotoProcessor - INFO - Backup created: E:\temp\jepanes\dropbox\test_photos\_backup\20260220_210950 (3 files)
+2026-02-20 21:09:52,803 - PhotoProcessor - INFO - 2026-02-20 21:09:52 OK patient=AAAA count=3 session=20260220_210950
+2026-02-20 21:09:52,813 - PhotoProcessor - INFO - QR code detected in qr_bbbb.png: PATIENT_ID:BBBB
+2026-02-20 21:09:52,814 - PhotoProcessor - INFO - QR trigger: patient=BBBB, session=20260220_210952
+2026-02-20 21:09:52,816 - PhotoProcessor - INFO - Backup created: E:\temp\jepanes\dropbox\test_photos\_backup\20260220_210952 (1 files)
+2026-02-20 21:09:52,817 - PhotoProcessor - INFO - 2026-02-20 21:09:52 OK patient=BBBB count=1 session=20260220_210952
+2026-02-20 21:09:54,715 - PhotoProcessor - WARNING - Image no longer exists: qr_aaaa.png
+2026-02-20 21:09:54,715 - PhotoProcessor - INFO - New image detected: qr_bbbb.png
+2026-02-20 21:09:56,716 - PhotoProcessor - WARNING - Image no longer exists: qr_bbbb.png
+2026-02-20 21:10:35,218 - PhotoProcessor - INFO - Stopping Photo Processor...
+2026-02-20 21:10:35,219 - PhotoProcessor - INFO - Photo Processor stopped

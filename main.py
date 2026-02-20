@@ -178,8 +178,8 @@ class PhotoProcessor:
         return qualifying
 
     def _generate_session_id(self, qr_timestamp: datetime) -> str:
-        """Generate session ID from QR photo timestamp. Format: YYYYMMDD_HHMM"""
-        return qr_timestamp.strftime("%Y%m%d_%H%M")
+        """Generate session ID from QR photo timestamp. Format: YYYYMMDD_HHMMSS"""
+        return qr_timestamp.strftime("%Y%m%d_%H%M%S")
 
     def _create_backup(self, session_id: str, photos: List[Path], qr_photo: Path, patient_id: str) -> Path:
         """Create backup of all photos (including QR) before moving.
@@ -274,14 +274,11 @@ class PhotoProcessor:
 
         return moved_count
 
-    def _process_qr_trigger(self, qr_image_path: Path):
+    def _process_qr_trigger(self, qr_image_path: Path, patient_id: str):
         """Handle a detected QR code trigger photo.
 
         Orchestrates the full session: validate, collect, backup, organize, log.
         """
-        patient_id = self.detect_qr_code(qr_image_path)
-        if not patient_id:
-            return  
 
         qr_timestamp = self.get_image_timestamp(qr_image_path)
         session_id = self._generate_session_id(qr_timestamp)
@@ -335,12 +332,11 @@ class PhotoProcessor:
         """
         for image_path in new_images:
             if not image_path.exists():
-                self.logger.warning(f"Image no longer exists: {image_path.name}")
                 continue
 
             patient_id = self.detect_qr_code(image_path)
             if patient_id:
-                self._process_qr_trigger(image_path)
+                self._process_qr_trigger(image_path, patient_id)
 
     def scan_existing_images(self):
         """Scan for existing images in the watch folder at startup"""
