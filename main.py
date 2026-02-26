@@ -34,6 +34,10 @@ class PhotoProcessor:
         self.stop_on_error = self.config.get('stop_on_error', False)
         self.stop_requested = False
 
+        # Pre-compute supported formats set for fast lookup
+        formats = self.config.get('supported_formats', ['.jpg', '.jpeg', '.png', '.gif', '.bmp'])
+        self._supported_formats = {fmt.lower() for fmt in formats}
+
         # Setup logging
         self.setup_logging()
 
@@ -83,8 +87,7 @@ class PhotoProcessor:
 
     def is_image_file(self, filepath: Path) -> bool:
         """Check if file is a supported image format"""
-        supported_formats = self.config.get('supported_formats', ['.jpg', '.jpeg', '.png', '.gif', '.bmp'])
-        return filepath.suffix.lower() in [fmt.lower() for fmt in supported_formats]
+        return filepath.suffix.lower() in self._supported_formats
 
     def get_exif_date(self, image_path: Path) -> Optional[datetime]:
         """Extract capture date from EXIF metadata"""
@@ -162,6 +165,7 @@ class PhotoProcessor:
         Returns list of Path objects for qualifying photos (excluding the QR photo itself).
         """
         cutoff_time = qr_timestamp - timedelta(minutes=self.max_minutes_window)
+        qr_resolved = qr_image_path.resolve()
         qualifying = []
 
         for file in self.watch_folder.iterdir():
@@ -171,15 +175,15 @@ class PhotoProcessor:
                 continue
             if not self.is_image_file(file):
                 continue
-            if file.resolve() == qr_image_path.resolve():
+            if file.resolve() == qr_resolved:
                 continue
 
             timestamp = self.get_image_timestamp(file)
             if cutoff_time <= timestamp <= qr_timestamp:
-                qualifying.append(file)
+                qualifying.append((timestamp, file))
 
-        qualifying.sort(key=lambda p: self.get_image_timestamp(p))
-        return qualifying
+        qualifying.sort(key=lambda item: item[0])
+        return [file for _, file in qualifying]
 
     def _generate_session_id(self, qr_timestamp: datetime) -> str:
         """Generate session ID from QR photo timestamp. Format: YYYYMMDD_HHMMSS"""
