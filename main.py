@@ -29,6 +29,10 @@ class PhotoProcessor:
         self.max_minutes_window = self.config.get('max_minutes_window', 60)
         self.backup_folder_name = self.config.get('backup_folder_name', '_backup')
         self.error_folder_name = self.config.get('error_folder_name', '_error')
+        self.done_folder_name = self.config.get('done_folder_name', '_done')
+        self.startup_scan_minutes = self.config.get('startup_scan_minutes', 30)
+        self.stop_on_error = self.config.get('stop_on_error', False)
+        self.stop_requested = False
 
         # Setup logging
         self.setup_logging()
@@ -208,6 +212,13 @@ class PhotoProcessor:
         self.logger.info(f"Backup created: {backup_dir} ({total} files)")
         return backup_dir
 
+    def _write_done(self, session_id: str, patient_id: str, count: int):
+        """Write completion record to _done/ folder."""
+        done_dir = self.watch_folder / self.done_folder_name
+        done_dir.mkdir(parents=True, exist_ok=True)
+        with open(done_dir / f"done_{session_id}_{patient_id}.txt", "w", encoding="utf-8") as f:
+            f.write(f"Patient: {patient_id}\nFiles moved: {count}\nCompleted: {datetime.now()}\n")
+
     def _write_error_report(self, session_id: str, patient_id: str, error: Exception, context: str):
         """Write error details to _error/ folder."""
         error_dir = self.watch_folder / self.error_folder_name
@@ -311,6 +322,8 @@ class PhotoProcessor:
                 patient_id, qualifying_photos, qr_image_path, qr_timestamp
             )
 
+            self._write_done(session_id, patient_id, moved_count)
+
             self.logger.info(
                 f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} OK "
                 f"patient={patient_id} count={moved_count} session={session_id}"
@@ -323,6 +336,8 @@ class PhotoProcessor:
                 f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ERROR "
                 f"patient={patient_id} count=0 session={session_id}"
             )
+            if self.stop_on_error:
+                self.stop_requested = True
 
     def process_images(self, new_images: List[Path]):
         """Process newly detected images. Each image is checked for QR code.
@@ -339,8 +354,13 @@ class PhotoProcessor:
                 self._process_qr_trigger(image_path, patient_id)
 
     def scan_existing_images(self):
-        """Scan for existing images in the watch folder at startup"""
+        """Scan for existing images in the watch folder at startup.
+
+        Only processes images from the last startup_scan_minutes to avoid
+        re-processing old files.
+        """
         self.logger.info("Scanning for existing images...")
+        cutoff = datetime.now() - timedelta(minutes=self.startup_scan_minutes)
 
         images = []
         for file in self.watch_folder.iterdir():
@@ -348,14 +368,16 @@ class PhotoProcessor:
                 continue
             if self._should_skip_path(file):
                 continue
-            if self.is_image_file(file):
+            if not self.is_image_file(file):
+                continue
+            if self.get_image_timestamp(file) >= cutoff:
                 images.append(file)
 
         if images:
-            self.logger.info(f"Found {len(images)} existing images")
+            self.logger.info(f"Found {len(images)} recent images (within {self.startup_scan_minutes} min)")
             self.process_images(images)
         else:
-            self.logger.info("No existing images found")
+            self.logger.info("No recent images found")
 
     def run(self):
         """Main run loop"""
@@ -377,11 +399,13 @@ class PhotoProcessor:
         print("="*60 + "\n")
 
         try:
-            while True:
+            while not self.stop_requested:
                 time.sleep(1)
         except KeyboardInterrupt:
-            self.logger.info("Stopping Photo Processor...")
-            observer.stop()
+            pass
+
+        self.logger.info("Stopping Photo Processor...")
+        observer.stop()
 
         observer.join()
         self.logger.info("Photo Processor stopped")

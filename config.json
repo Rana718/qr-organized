@@ -14,6 +14,9 @@
     ],
     "max_photos_per_session": 200,
     "max_minutes_window": 60,
+    "startup_scan_minutes": 30,
     "backup_folder_name": "_backup",
-    "error_folder_name": "_error"
+    "error_folder_name": "_error",
+    "done_folder_name": "_done",
+    "stop_on_error": false
 }
