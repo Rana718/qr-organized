@@ -10,3 +10,4 @@ wheels/
 .venv
 req.md
 REQUIREMENTS_VERIFICATION.md
+temp/

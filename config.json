@@ -18,5 +18,8 @@
     "backup_folder_name": "_backup",
     "error_folder_name": "_error",
     "done_folder_name": "_done",
-    "stop_on_error": false
+    "unprocessed_folder_name": "_unprocessed",
+    "stop_on_error": false,
+    "patient_stats_file": "patient_stats.json",
+    "csv_log_file": "photo_history.csv"
 }

@@ -1,5 +1,6 @@
 import os
 import sys
+import csv
 import json
 import time
 import shutil
@@ -27,9 +28,12 @@ class PhotoProcessor:
         self.backup_folder_name = self.config.get('backup_folder_name', '_backup')
         self.error_folder_name = self.config.get('error_folder_name', '_error')
         self.done_folder_name = self.config.get('done_folder_name', '_done')
+        self.unprocessed_folder_name = self.config.get('unprocessed_folder_name', '_unprocessed')
         self.startup_scan_minutes = self.config.get('startup_scan_minutes', 30)
         self.stop_on_error = self.config.get('stop_on_error', False)
         self.stop_requested = False
+        self.patient_stats_file = self.config.get('patient_stats_file', 'patient_stats.json')
+        self.csv_log_file = self.config.get('csv_log_file', 'photo_history.csv')
 
         formats = self.config.get('supported_formats', ['.jpg', '.jpeg', '.png', '.gif', '.bmp'])
         self._supported_formats = {fmt.lower() for fmt in formats}
@@ -179,6 +183,50 @@ class PhotoProcessor:
         self.logger.info(f"Backup created: {backup_dir} ({total} files)")
         return backup_dir
 
+    def _move_to_unprocessed(self, image_path: Path):
+        unprocessed_dir = self.watch_folder / self.unprocessed_folder_name
+        unprocessed_dir.mkdir(parents=True, exist_ok=True)
+        dest = unprocessed_dir / image_path.name
+        if dest.exists():
+            stem = image_path.stem
+            suffix = image_path.suffix
+            counter = 1
+            while dest.exists():
+                dest = unprocessed_dir / f"{stem}_{counter}{suffix}"
+                counter += 1
+        shutil.move(str(image_path), str(dest))
+        self.logger.info(f"No QR code detected, moved to unprocessed: {image_path.name} -> {dest.name}")
+
+    def _update_patient_stats(self, patient_id: str, photo_count: int):
+        stats_path = Path(self.patient_stats_file)
+        stats = {}
+        if stats_path.exists():
+            try:
+                with open(stats_path, 'r', encoding='utf-8') as f:
+                    stats = json.load(f)
+            except Exception:
+                stats = {}
+        stats[patient_id] = stats.get(patient_id, 0) + photo_count
+        with open(stats_path, 'w', encoding='utf-8') as f:
+            json.dump(stats, f, ensure_ascii=False, indent=2)
+        self.logger.debug(f"Patient stats updated: {patient_id} total={stats[patient_id]}")
+
+    def _append_csv_log(self, session_id: str, patient_id: str, photo_count: int, date_folder: str, status: str):
+        csv_path = Path(self.csv_log_file)
+        write_header = not csv_path.exists()
+        with open(csv_path, 'a', newline='', encoding='utf-8-sig') as f:
+            writer = csv.writer(f)
+            if write_header:
+                writer.writerow(['timestamp', 'session_id', 'patient_id', 'photo_count', 'date_folder', 'status'])
+            writer.writerow([
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                session_id,
+                patient_id,
+                photo_count,
+                date_folder,
+                status,
+            ])
+
     def _write_done(self, session_id: str, patient_id: str, count: int):
         done_dir = self.watch_folder / self.done_folder_name
         done_dir.mkdir(parents=True, exist_ok=True)
@@ -264,6 +312,7 @@ class PhotoProcessor:
                     ValueError(error_msg),
                     "Max photos per session exceeded"
                 )
+                self._append_csv_log(session_id, patient_id, len(qualifying_photos), "", "ERROR_MAX_EXCEEDED")
                 self.logger.info(
                     f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ERROR "
                     f"patient={patient_id} count={len(qualifying_photos)} session={session_id}"
@@ -278,6 +327,10 @@ class PhotoProcessor:
 
             self._write_done(session_id, patient_id, moved_count)
 
+            date_folder = qr_timestamp.strftime("%Y.%m.%d")
+            self._update_patient_stats(patient_id, moved_count)
+            self._append_csv_log(session_id, patient_id, moved_count, date_folder, "OK")
+
             self.logger.info(
                 f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} OK "
                 f"patient={patient_id} count={moved_count} session={session_id}"
@@ -286,6 +339,7 @@ class PhotoProcessor:
         except Exception as e:
             self.logger.error(f"Session {session_id} failed: {e}")
             self._write_error_report(session_id, patient_id, e, "Session processing failed")
+            self._append_csv_log(session_id, patient_id, 0, "", "ERROR")
             self.logger.info(
                 f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ERROR "
                 f"patient={patient_id} count=0 session={session_id}"
@@ -301,6 +355,8 @@ class PhotoProcessor:
             patient_id = self.detect_qr_code(image_path)
             if patient_id:
                 self._process_qr_trigger(image_path, patient_id)
+            else:
+                self._move_to_unprocessed(image_path)
 
     def scan_existing_images(self):
         self.logger.info("Scanning for existing images...")
