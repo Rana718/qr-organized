@@ -1,0 +1,70 @@
+name: Build Executables
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            output: PhotoOrganizer.exe
+            artifact: PhotoOrganizer-windows
+          - os: macos-latest
+            output: PhotoOrganizer
+            artifact: PhotoOrganizer-mac
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - run: uv sync
+
+      - name: Install PyInstaller
+        run: uv run pip install pyinstaller
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          uv run pyinstaller --onefile --name "PhotoOrganizer" `
+            --add-binary ".venv/Lib/site-packages/pyzbar/libiconv.dll;pyzbar" `
+            --add-binary ".venv/Lib/site-packages/pyzbar/libzbar-64.dll;pyzbar" `
+            main.py
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          uv run pyinstaller --onefile --name "PhotoOrganizer" main.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.output }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Rename artifacts
+        run: |
+          mv artifacts/PhotoOrganizer-windows/PhotoOrganizer.exe artifacts/PhotoOrganizer-windows.exe
+          mv artifacts/PhotoOrganizer-mac/PhotoOrganizer artifacts/PhotoOrganizer-mac
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/PhotoOrganizer-windows.exe
+            artifacts/PhotoOrganizer-mac

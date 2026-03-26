@@ -347,7 +347,7 @@ class PhotoProcessor:
             if self.stop_on_error:
                 self.stop_requested = True
 
-    def process_images(self, new_images: List[Path]):
+    def process_images(self, new_images: List[Path], move_unprocessed: bool = False):
         for image_path in new_images:
             if not image_path.exists():
                 continue
@@ -355,14 +355,15 @@ class PhotoProcessor:
             patient_id = self.detect_qr_code(image_path)
             if patient_id:
                 self._process_qr_trigger(image_path, patient_id)
-            else:
+            elif move_unprocessed:
                 self._move_to_unprocessed(image_path)
 
     def scan_existing_images(self):
         self.logger.info("Scanning for existing images...")
         cutoff = datetime.now() - timedelta(minutes=self.startup_scan_minutes)
+        expired = datetime.now() - timedelta(minutes=self.max_minutes_window)
 
-        images = []
+        recent, stale = [], []
         for file in self.watch_folder.iterdir():
             if not file.is_file():
                 continue
@@ -370,14 +371,21 @@ class PhotoProcessor:
                 continue
             if not self.is_image_file(file):
                 continue
-            if self.get_image_timestamp(file) >= cutoff:
-                images.append(file)
+            ts = self.get_image_timestamp(file)
+            if ts >= cutoff:
+                recent.append(file)
+            elif ts < expired:
+                stale.append(file)
 
-        if images:
-            self.logger.info(f"Found {len(images)} recent images (within {self.startup_scan_minutes} min)")
-            self.process_images(images)
+        if recent:
+            self.logger.info(f"Found {len(recent)} recent images (within {self.startup_scan_minutes} min)")
+            self.process_images(recent)
         else:
             self.logger.info("No recent images found")
+
+        if stale:
+            self.logger.info(f"Found {len(stale)} stale images (older than {self.max_minutes_window} min), moving to unprocessed")
+            self.process_images(stale, move_unprocessed=True)
 
     def run(self):
         self.logger.info("Starting Photo Processor...")

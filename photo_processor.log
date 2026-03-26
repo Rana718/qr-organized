@@ -234,3 +234,45 @@
 2026-02-20 21:09:56,716 - PhotoProcessor - WARNING - Image no longer exists: qr_bbbb.png
 2026-02-20 21:10:35,218 - PhotoProcessor - INFO - Stopping Photo Processor...
 2026-02-20 21:10:35,219 - PhotoProcessor - INFO - Photo Processor stopped
+2026-03-26 12:46:59,617 - PhotoProcessor - INFO - Photo Processor initialized
+2026-03-26 12:46:59,617 - PhotoProcessor - INFO - Watching folder: E:\temp\jepanes\dropbox\test_photos
+2026-03-26 12:46:59,617 - PhotoProcessor - INFO - Starting Photo Processor...
+2026-03-26 12:46:59,617 - PhotoProcessor - INFO - Scanning for existing images...
+2026-03-26 12:46:59,618 - PhotoProcessor - INFO - No recent images found
+2026-03-26 12:46:59,619 - PhotoProcessor - INFO - Monitoring folder for new images...
+2026-03-26 12:47:23,994 - PhotoProcessor - INFO - New image detected: 004.jpg
+2026-03-26 12:47:26,004 - PhotoProcessor - INFO - No QR code detected, moved to unprocessed: 004.jpg -> 004.jpg
+2026-03-26 12:47:36,100 - PhotoProcessor - INFO - New image detected: QR_9999.jpg
+2026-03-26 12:47:38,110 - PhotoProcessor - INFO - QR code detected in QR_9999.jpg: PATIENT_ID:9999
+2026-03-26 12:47:38,121 - PhotoProcessor - INFO - QR trigger: patient=9999, session=20260220_222411
+2026-03-26 12:47:38,124 - PhotoProcessor - INFO - Backup created: E:\temp\jepanes\dropbox\test_photos\_backup\20260220_222411 (1 files)
+2026-03-26 12:47:38,129 - PhotoProcessor - INFO - 2026-03-26 12:47:38 OK patient=9999 count=1 session=20260220_222411
+2026-03-26 12:48:10,914 - PhotoProcessor - INFO - New image detected: 003.jpg
+2026-03-26 12:48:12,923 - PhotoProcessor - INFO - No QR code detected, moved to unprocessed: 003.jpg -> 003.jpg
+2026-03-26 12:48:56,779 - PhotoProcessor - INFO - New image detected: QR_1111.png
+2026-03-26 12:48:58,788 - PhotoProcessor - INFO - QR code detected in QR_1111.png: PATIENT_ID:1111
+2026-03-26 12:48:58,790 - PhotoProcessor - INFO - QR trigger: patient=1111, session=20260220_210813
+2026-03-26 12:48:58,791 - PhotoProcessor - INFO - Backup created: E:\temp\jepanes\dropbox\test_photos\_backup\20260220_210813 (1 files)
+2026-03-26 12:48:58,793 - PhotoProcessor - INFO - 2026-03-26 12:48:58 OK patient=1111 count=1 session=20260220_210813
+2026-03-26 13:02:51,284 - PhotoProcessor - INFO - Stopping Photo Processor...
+2026-03-26 13:02:51,285 - PhotoProcessor - INFO - Photo Processor stopped
+2026-03-26 13:03:32,282 - PhotoProcessor - INFO - Photo Processor initialized
+2026-03-26 13:03:32,283 - PhotoProcessor - INFO - Watching folder: E:\temp\jepanes\dropbox\test_photos
+2026-03-26 13:03:32,283 - PhotoProcessor - INFO - Starting Photo Processor...
+2026-03-26 13:03:32,283 - PhotoProcessor - INFO - Scanning for existing images...
+2026-03-26 13:03:32,284 - PhotoProcessor - INFO - No recent images found
+2026-03-26 13:03:32,285 - PhotoProcessor - INFO - Monitoring folder for new images...
+2026-03-26 13:03:43,842 - PhotoProcessor - INFO - New image detected: 004.jpg
+2026-03-26 13:03:59,589 - PhotoProcessor - INFO - New image detected: QR_9999.jpg
+2026-03-26 13:04:01,598 - PhotoProcessor - INFO - QR code detected in QR_9999.jpg: PATIENT_ID:9999
+2026-03-26 13:04:01,610 - PhotoProcessor - INFO - QR trigger: patient=9999, session=20260220_222411
+2026-03-26 13:04:01,613 - PhotoProcessor - INFO - Backup created: E:\temp\jepanes\dropbox\test_photos\_backup\20260220_222411 (2 files)
+2026-03-26 13:04:01,617 - PhotoProcessor - INFO - 2026-03-26 13:04:01 OK patient=9999 count=2 session=20260220_222411
+2026-03-26 13:04:08,332 - PhotoProcessor - INFO - New image detected: 003.jpg
+2026-03-26 13:04:22,532 - PhotoProcessor - INFO - New image detected: QR_9999.jpg
+2026-03-26 13:04:24,541 - PhotoProcessor - INFO - QR code detected in QR_9999.jpg: PATIENT_ID:9999
+2026-03-26 13:04:24,542 - PhotoProcessor - INFO - QR trigger: patient=9999, session=20260220_222411
+2026-03-26 13:04:24,544 - PhotoProcessor - INFO - Backup created: E:\temp\jepanes\dropbox\test_photos\_backup\20260220_222411 (2 files)
+2026-03-26 13:04:24,547 - PhotoProcessor - INFO - 2026-03-26 13:04:24 OK patient=9999 count=2 session=20260220_222411
+2026-03-26 13:09:29,603 - PhotoProcessor - INFO - Stopping Photo Processor...
+2026-03-26 13:09:29,605 - PhotoProcessor - INFO - Photo Processor stopped
