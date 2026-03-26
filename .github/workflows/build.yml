@@ -61,10 +61,11 @@ jobs:
       - name: Rename artifacts
         run: |
           mv artifacts/PhotoOrganizer-windows/PhotoOrganizer.exe artifacts/PhotoOrganizer-windows.exe
-          mv artifacts/PhotoOrganizer-mac/PhotoOrganizer artifacts/PhotoOrganizer-mac
+          cp artifacts/PhotoOrganizer-mac/PhotoOrganizer artifacts/PhotoOrganizer-mac-binary
 
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: latest
           files: |
             artifacts/PhotoOrganizer-windows.exe
-            artifacts/PhotoOrganizer-mac
+            artifacts/PhotoOrganizer-mac-binary
